@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { fetchEuribor } from '../api';
 import styled from 'styled-components';
 import { breakpoints } from '../theme';
+import LoadingIndicator from './LoadingIndicator';
 
 const RateBoxContainer = styled.div<{ rate: number }>`
   width: 160px;
@@ -74,15 +75,18 @@ const RateBox = ({ type, rate }: RateBoxProps) => {
 
 const RateList = () => {
   const [rates, setRates] = useState<Euribor>({ rates: {} });
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
+      setIsLoading(true);
       try {
         const fetchedRates = await fetchEuribor();
         setRates(fetchedRates);
       } catch (error) {
         console.error('There was a problem fetching the Euribor rates: ', error);
       }
+      setIsLoading(false);
     };
 
     fetchData();
@@ -90,12 +94,18 @@ const RateList = () => {
 
   return (
     <>
-      <DateText>Last updated {convertToLocaleDateFormat(rates.lastUpdated || '')}</DateText>
-      <RateListContainer>
-        {rates && Object.keys(rates.rates || {}).map((key) => (
-          <RateBox key={key} type={key} rate={rates.rates[key as keyof EuriborRates] ?? 0} />
-        ))}
-      </RateListContainer>
+      {isLoading ? (
+        <LoadingIndicator></LoadingIndicator>
+      ) : (
+        <>
+          <DateText>Last updated {convertToLocaleDateFormat(rates.lastUpdated || '')}</DateText>
+          <RateListContainer>
+            {rates && Object.keys(rates.rates || {}).map((key) => (
+              <RateBox key={key} type={key} rate={rates.rates[key as keyof EuriborRates] ?? 0} />
+            ))}
+          </RateListContainer>
+        </>
+      )}
     </>
   );
 };
